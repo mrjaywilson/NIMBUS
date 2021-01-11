@@ -1,50 +1,47 @@
 ﻿using System.Collections;
-using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using UnityStandardAssets.CrossPlatformInput;
-using UnityEngine.SceneManagement;
+using UnityEngine;
 using MilkShake;
+using TMPro;
 
+
+/// <summary>
+/// 
+/// Author:         Jay Wilson
+/// Description:    Handles what happens when user attack collides with mines.
+/// 
+/// </summary>
 public class Player : MonoBehaviour
 {
 
-    // Player Specific
-    private float _playerBloat = 0.025f; // Not used, supposed to increase size of player
     private float _speed = 2f;
     private float _modSpeed;
     private bool _playerDead;
-
-    // Player Controls
-    [SerializeField]
-    private GameObject _mobileStick;
-    [SerializeField]
-    private GameObject _mobileTilt;
+    private Rigidbody2D _rb;
 
     private PlayerControllerType _controllerType;
     private float _horizontal;
     private float _vertical;
 
-    // Specials
     private int _bonusLifeScoreInterval;
     private bool _invulnerable;
     private bool _bombActive;
     private int _playerAttackCount;
 
     [SerializeField]
-    private ParticleSystem _attackparticles;
+    private ParticleSystem _attackparticles = null;
     [SerializeField]
-    private GameObject _attackObject;
+    private GameObject _attackObject = null;
 
     [SerializeField]
-    private Slider _playerAttackSlider;
+    private Slider _playerAttackSlider = null;
     [SerializeField]
-    private Slider _playerBombSlider;
+    private Slider _playerBombSlider = null;
 
     [SerializeField]
-    private GameObject _attackReady;
+    private GameObject _attackReady = null;
     [SerializeField]
-    private GameObject _bombReady;
+    private GameObject _bombReady = null;
 
     private ParticleSystem _attackReadyEffect;
     private ParticleSystem _bombReadyEffect;
@@ -54,33 +51,44 @@ public class Player : MonoBehaviour
     SpriteRenderer _spriteRenderer;
     private GameObject _particles;
 
+    [SerializeField]
+    private GameObject _playerTail = null;
+
     // Score and Lives
     [SerializeField]
     private long _score;
     [SerializeField]
     private int _lives;
     [SerializeField]
-    private TextMeshProUGUI _scoreText;
+    private TextMeshProUGUI _scoreText = null;
     [SerializeField]
-    private TextMeshProUGUI _livesText;
+    private TextMeshProUGUI _livesText = null;
 
     private int _scoreModifier;
     private int _currentScoreModifier;
 
-    //[SerializeField]
-    //private CameraShake cameraShake;
     [SerializeField]
-    private ShakePreset _shakePreset;
+    private ShakePreset _shakePreset = null;
 
     [SerializeField]
-    private Shaker _myShaker;
+    private Shaker _myShaker = null;
 
-    // private bool _resetPlayer;
+    [SerializeField]
+    private Joystick _leftJoystick = null;
+    [SerializeField]
+    private Joystick _rightJoystick = null;
+
+    private Vector2 _move;
+    private bool _resetPlayerLocation;
 
     public long Score { get { return _score; } set { _score = value; } }
     public int Lives { get { return _lives; } set { _lives = value; } }
 
+    public bool IsBlocked { get { return _playerBlocked; } }
 
+    /// <summary>
+    /// Player initialization.
+    /// </summary>
     public void Init()
     {
         _playerAttackSlider.value = 0;
@@ -98,24 +106,32 @@ public class Player : MonoBehaviour
 
         if (_playerDead)
         {
-            // Unlock player controls
+            // Unlock player controls if the game is restarting.
             Block();
             _playerDead = false;
         }
 
-        _invulnerable = false;
         _bombActive = true;
-
+        _invulnerable = false;
         _playerBlocked = false;
 
-        Lives = 3;
+        if (GameManager.Instance.IsHardcore())
+        {
+            Lives = 0;
+        }
+        else
+        {
+            Lives = 3;
+        }
         _scoreModifier = 0;
         _currentScoreModifier = 0;
 
         transform.position = Vector3.zero;
     }
 
-    // Start is called before the first frame update
+    /// <summary>
+    /// Called when the gamepobject is created and before the first frame.
+    /// </summary>
     void Start()
     {
         _playerDead = false;
@@ -133,14 +149,14 @@ public class Player : MonoBehaviour
 
         _bonusLifeScoreInterval = 50000;
 
-        if (_controllerType == PlayerControllerType.STICK)
-        {
-            _mobileStick.SetActive(true);
-        }
-        else if (_controllerType == PlayerControllerType.TILT)
-        {
-            _mobileTilt.SetActive(true);
-        }
+        //if (_controllerType == PlayerControllerType.STICK)
+        //{
+        //    _mobileStick.SetActive(true);
+        //}
+        //else if (_controllerType == PlayerControllerType.TILT)
+        //{
+        //    _mobileTilt.SetActive(true);
+        //}
 
         // _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
@@ -150,9 +166,12 @@ public class Player : MonoBehaviour
             Debug.LogError("Player::SpriteRenderer is null!");
         }
 
+        _rb = GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// Player Game Loop
+    /// </summary>
     void Update()
     {
         if (!_playerBlocked)
@@ -190,12 +209,44 @@ public class Player : MonoBehaviour
             }
         }
 
+        if (_resetPlayerLocation)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, Vector3.zero, 5f * Time.deltaTime);
+
+            if (transform.position == Vector3.zero)
+            {
+                GetComponent<Collider2D>().enabled = true;
+                _resetPlayerLocation = false;
+                Block();
+            }
+        }
+
+        if (Input.GetKey(KeyCode.Escape))
+        {
+            var cont = GameObject.FindGameObjectWithTag("Continue");
+
+            if (cont != null)
+            {
+                GameObject.FindGameObjectWithTag("Continue").SetActive(false);
+                GameManager.Instance.ToggleGameOver();
+                return;
+            }
+            
+            // else if at game over, go back to play menu
+            if (!GameManager.Instance.ConfirmQuit)
+            {
+                Block();
+                GameManager.Instance.ToggleConfirmQuit();
+            }
+
+            // SceneManager.LoadScene("Menu");
+        }
     }
 
-    private IEnumerator ScoreCount()
+    // Removal of score count setup for performance and bug fix
+    // This is also important because this feature doesn't work right anyway
+    private IEnumerator ScoreUpdate()
     {
-
-
         if (_currentScoreModifier != 0)
         {
             _scoreModifier = GameManager.Instance.LevelScore * _currentScoreModifier;
@@ -207,23 +258,21 @@ public class Player : MonoBehaviour
 
         // adjust amount
         GameManager.Instance.CurrentGemScore = (GameManager.Instance.LevelScore * GameManager.Instance.Level) + _scoreModifier;
-        GameManager.Instance.FinalScore += GameManager.Instance.CurrentGemScore;
 
-        for (int i = 1; i <= GameManager.Instance.CurrentGemScore / 2; i++)
+        // Update data
+        Score += GameManager.Instance.CurrentGemScore;
+        GameManager.Instance.FinalScore = Score;
+
+        // Update UI
+        _scoreText.text = Score.ToString("N0");
+
+        if (!GameManager.Instance.IsHardcore())
         {
-
-            Score += 2;
-            _scoreText.text = Score.ToString("N0");
-
             if (Score >= _bonusLifeScoreInterval)
             {
                 _bonusLifeScoreInterval += 50000;
                 Lives++;
-
-                Debug.Log("Bonus life interval: " + _bonusLifeScoreInterval);
             }
-
-            yield return new WaitForSeconds(0f);
         }
 
         SetGlobalScore();
@@ -231,9 +280,14 @@ public class Player : MonoBehaviour
         yield break;
     }
 
+    /// <summary>
+    /// Add to the game score.
+    /// </summary>
+    /// <returns></returns>
     public IEnumerator AddScore()
     {
-        StartCoroutine(ScoreCount());
+        // StartCoroutine(ScoreCount());
+        StartCoroutine(ScoreUpdate());
 
         _scoreText.text = Score.ToString("N0");
 
@@ -241,12 +295,19 @@ public class Player : MonoBehaviour
         yield break;
     }
 
+    /// <summary>
+    /// Check the diamonds.
+    /// </summary>
+    /// <returns></returns>
     IEnumerator DiamondCheck()
     {
         // yield return new WaitForSeconds(.6f);
         yield return StartCoroutine(GameManager.Instance.CheckGemCount());
     }
 
+    /// <summary>
+    /// Remove a life from the player.
+    /// </summary>
     public void RemoveLife()
     {
         if (!_invulnerable)
@@ -268,12 +329,19 @@ public class Player : MonoBehaviour
 
         _livesText.text = Lives.ToString();
 
-        if (Lives <= 0)
+        if (Lives < 0)
         {
+            _livesText.text = "0";
             PlayerDead();
         }
+
     }
 
+    /// <summary>
+    /// Used to increase the player size.
+    /// 
+    /// Currently deprecated.
+    /// </summary>
     public void IncreaseSize()
     {
         //transform.localScale += new Vector3(_playerBloat, _playerBloat, _playerBloat);
@@ -281,14 +349,44 @@ public class Player : MonoBehaviour
         // transform.GetChild(0).gameObject.transform.position = Vector3.zero;
     }
 
+    /// <summary>
+    /// Method to handle moving the player.
+    /// </summary>
     private void MovePlayer()
     {
+        #region DEVICE_TYPE
 #if UNITY_ANDROID
 
         if (_controllerType == PlayerControllerType.STICK || _controllerType == PlayerControllerType.TILT)
         {
-            _horizontal = CrossPlatformInputManager.GetAxisRaw("Horizontal");
-            _vertical = CrossPlatformInputManager.GetAxisRaw("Vertical");
+            if (_leftJoystick.Horizontal != 0 && _rightJoystick.Horizontal == 0)
+            {
+                _horizontal = _leftJoystick.Horizontal;
+            }
+            else if (_rightJoystick.Horizontal != 0 && _leftJoystick.Horizontal == 0)
+            {
+                _horizontal = _rightJoystick.Horizontal;
+            }
+            else
+            {
+                _horizontal = 0;
+            }
+
+            if (_leftJoystick.Vertical != 0 && _rightJoystick.Horizontal == 0)
+            {
+                _vertical = _leftJoystick.Vertical;
+            }
+            else if (_rightJoystick.Vertical != 0 && _leftJoystick.Horizontal == 0)
+            {
+                _vertical = _rightJoystick.Vertical;
+            }
+            else
+            {
+                _vertical = 0;
+            }
+
+            //_horizontal = CrossPlatformInputManager.GetAxisRaw("Horizontal");
+            //_vertical = CrossPlatformInputManager.GetAxisRaw("Vertical");
         }
         else
         {
@@ -332,22 +430,44 @@ public class Player : MonoBehaviour
             _modSpeed = 3.5f;
 #endif
         }
+        #endregion
 
-        if (Input.GetKey(KeyCode.Escape))
+        _move = new Vector2(_horizontal, _vertical);
+        var main = _playerTail.GetComponent<ParticleSystem>().main;
+
+        if (_move.sqrMagnitude != 0)
         {
-            SceneManager.LoadScene("Menu");
+            transform.up = _move;
+
+            if (_horizontal == 0 && _vertical != 0)
+            {
+                if (_vertical > 0)
+                {
+                    main.startRotation = -transform.rotation.eulerAngles.magnitude * Mathf.Deg2Rad;
+                }
+                else if (_vertical < 0)
+                {
+                    main.startRotation = transform.rotation.eulerAngles.y * Mathf.Deg2Rad;
+                }
+            }
+            else
+            {
+                main.startRotation = -transform.rotation.eulerAngles.magnitude * Mathf.Deg2Rad;
+            }
         }
-
-        Vector3 move = new Vector3(_horizontal, _vertical, 0f) * (_speed + _modSpeed) * Time.deltaTime;
-
-        transform.Translate(move);
     }
 
-    public void SlowPlayer()
+    /// <summary>
+    /// Happens last on the update at the end of every frame.
+    /// </summary>
+    private void FixedUpdate()
     {
-
+        _rb.MovePosition(_rb.position + (_move * (_speed + _modSpeed) * Time.deltaTime));
     }
 
+    /// <summary>
+    /// Handled player's death.
+    /// </summary>
     public void PlayerDead()
     {
         _scoreText.text = GameManager.Instance.FinalScore.ToString("N0");
@@ -358,21 +478,19 @@ public class Player : MonoBehaviour
         GameManager.Instance.GameOver();
 
         gameObject.SetActive(false);
-
-        //GameManager.Instance.GameFinished = true;
-        //// Don't destroy. Need to be able to add lives and continue as needed, but in the mean time, hide and player_block
-        //Instantiate(_continueGame, new Vector3(0f, 0f, 0f), Quaternion.identity);
-
-        //gameObject.SetActive(false);
     }
 
-    public void Block()
+    /// <summary>
+    /// Method to block/unblock player movement.
+    /// </summary>
+    public void ToggleBlock()
     {
-
-        GetComponent<Collider2D>().enabled = !GetComponent<Collider2D>().enabled;
         _playerBlocked = !_playerBlocked;
     }
 
+    /// <summary>
+    /// Handles the bomb powerup.
+    /// </summary>
     public void BombPowerUp()
     {
             var currentMines = FindObjectsOfType<Mine>();
@@ -393,25 +511,40 @@ public class Player : MonoBehaviour
             _bombActive = false;
     }
 
-    public IEnumerator RelocatePlayer()
+    /// <summary>
+    /// Reset the player location.
+    /// </summary>
+    public void ResetPlayerLocation()
     {
-        while (transform.position != Vector3.zero)
-        {
-            transform.position = Vector3.MoveTowards(transform.position, Vector3.zero, 5f * Time.deltaTime);
-            yield return new WaitForSeconds(.0001f);
-        }
+        GetComponent<Collider2D>().enabled = false;
+        _resetPlayerLocation = true;
     }
 
+    /// <summary>
+    /// Sets the player to invulnerable.
+    /// </summary>
     public void Invulnerable()
     {
         _invulnerable = !_invulnerable;
     }
 
+    /// <summary>
+    /// Add an extra life to the user.
+    /// </summary>
     public void AddLife()
     {
+        if (GameManager.Instance.IsHardcore())
+        {
+            return;
+        }
+
         ++Lives;
     }
 
+    /// <summary>
+    /// Increase the score by the amount provided.
+    /// </summary>
+    /// <param name="amount">Amount to increase the score.</param>
     public void ScoreMultiplier(int amount)
     {
         bool multiplierStatus = false;
@@ -430,6 +563,9 @@ public class Player : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Global score.
+    /// </summary>
     private void SetGlobalScore()
     {
         //PlayerPrefs.SetString("PlayerScore", _score.ToString());
@@ -442,6 +578,9 @@ public class Player : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles the counter for the player's attack.
+    /// </summary>
     public void RemoveFromAttack()
     {
         if (_playerAttackSlider.value > 0)
@@ -455,6 +594,9 @@ public class Player : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles that player's shockwave attack.
+    /// </summary>
     public void PlayerAttack()
     {
             if (_playerAttackSlider.value == 0)
@@ -468,6 +610,10 @@ public class Player : MonoBehaviour
             }
     }
 
+    /// <summary>
+    /// Handles the colloder for the player's attack.
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator AttackCollider()
     {
         _attackObject.GetComponent<Collider2D>().enabled = true;

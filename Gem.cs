@@ -1,40 +1,44 @@
 ﻿using UnityEngine;
 using TMPro;
 
+/// <summary>
+/// 
+/// Author:         Jay Wilson
+/// Description:    Handles gems.
+/// 
+/// </summary>
 public class Gem : MonoBehaviour
 {
     [SerializeField]
-    // private int _scoreValue;
     private Collider2D _collider2D;
-    private AudioSource _audioSource;
+    private SoundEffects _soundEffect;
     private SpriteRenderer _spriteRenderer;
 
     [SerializeField]
-    private ParticleSystem _pickupEffect;
+    private ParticleSystem _pickupEffect = null;
 
     [SerializeField]
-    private TextMeshProUGUI _score;
+    private TextMeshProUGUI _score = null;
     [SerializeField]
-    private TextMeshProUGUI _time;
+    private TextMeshProUGUI _time = null;
 
-
-    // public int ScoreValue { get { return _scoreValue; } set { _scoreValue = value; } }
-
-    // Start is called before the first frame update
+    /// <summary>
+    /// Method called after instantiation and before the furst update loop frame
+    /// </summary>
     void Start()
     {
         _collider2D = GetComponent<Collider2D>();
-        _audioSource = GetComponent<AudioSource>();
         _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        _soundEffect = GameObject.FindGameObjectWithTag("SoundEffects").GetComponent<SoundEffects>();
 
         if (_collider2D == null)
         {
             Debug.LogError("Diamond::Collider2D is null!");
         }
 
-        if (_audioSource == null)
+        if (_soundEffect == null)
         {
-            Debug.LogError("Diamond::AudioSource is null!");
+            Debug.LogError("Diamond::SoundEffects is null!");
         }
 
         if (_spriteRenderer == null)
@@ -44,22 +48,9 @@ public class Gem : MonoBehaviour
 
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        //Collider2D overlapObjectCollider = Physics2D.OverlapCircle(transform.position, 0.5f);
-
-        //if (overlapObjectCollider != null)
-        //{
-        //    var mine = overlapObjectCollider.GetComponentInParent<Mine>();
-
-        //    if (mine != null)
-        //    {
-        //        mine.Explode();
-        //    }
-        //}
-    }
-
+    /// <summary>
+    /// Method determines what happens with this objects collision.
+    /// </summary>
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.tag == "Player")
@@ -96,10 +87,17 @@ public class Gem : MonoBehaviour
                 _time.text = "+ " + GameManager.Instance.TimerIncrement.ToString();
                 _time.GetComponent<Animator>().SetTrigger("Rise");
             }
-
-            if (_audioSource.clip != null)
+            else if (GameManager.Instance.IsHardcore() && GameManager.Instance.HardCoreTimerLock)
             {
-                _audioSource.Play();
+                _time.gameObject.SetActive(true);
+                _time.text = "+ " + GameManager.Instance.TimerIncrement.ToString();
+                _time.GetComponent<Animator>().SetTrigger("Rise");
+            }
+
+            if (_soundEffect != null)
+            {
+                _soundEffect.PlayGemSound();
+                // _audioSource.Play();
             }
 
             Destroy(gameObject, 1f);

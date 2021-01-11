@@ -2,9 +2,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 
+/// Author:         Jay Wilson
+/// Description:    Handles what background music.
+/// 
+/// </summary>
 public class CameraShake : MonoBehaviour
 {
 
+    /// <summary>
+    /// Shake the camera.
+    /// 
+    /// Currently deprecated.
+    /// </summary>
     public IEnumerator Shake(float duration, float magnitude)
     {
         Vector3 originialPosition = transform.position;

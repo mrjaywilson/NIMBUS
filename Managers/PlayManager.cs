@@ -5,20 +5,28 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
+/// <summary>
+///
+/// Author:         Jay Wilson
+/// Description:    Handles the play menu.
+/// 
+/// Currently deprecated and no longer in use. Code condenced into MenuManager.
+/// 
+/// </summary>
 public class PlayManager : MonoBehaviour
 {
 
     // UI Stuff
     [SerializeField]
-    private TextMeshProUGUI _highScore;
+    private TextMeshProUGUI _highScore = null;
     [SerializeField]
-    private TextMeshProUGUI _standardLevel;
+    private TextMeshProUGUI _standardLevel = null;
     [SerializeField]
-    private TextMeshProUGUI _arcadeLevel;
+    private TextMeshProUGUI _arcadeLevel = null;
     [SerializeField]
-    private TextMeshProUGUI _gemsCollected;
+    private TextMeshProUGUI _gemsCollected = null;
     [SerializeField]
-    private TextMeshProUGUI _minesHit;
+    private TextMeshProUGUI _minesHit = null;
 
     private Button _startButton;
 
@@ -78,14 +86,6 @@ public class PlayManager : MonoBehaviour
         {
             _minesHit.text = PlayerPrefs.GetInt("MinesHit", 0).ToString("N0");
         }
-    }
-
-    private void Update()
-    {
-        //if (Input.GetKey(KeyCode.Escape) || Input.GetButtonDown("Fire2"))
-        //{
-        //    PlayMenuBack();
-        //}
     }
 
     public void PlayNormalGame()

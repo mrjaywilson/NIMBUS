@@ -3,24 +3,41 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// 
+/// Author:         Jay Wilson
+/// Description:    Handles what background music.
+/// 
+/// </summary>
 public class BackgroundMusic : MonoBehaviour
 {
     AudioSource _backgroundMusic;
     [SerializeField]
-    List<AudioClip> _musics;
+    List<AudioClip> _musics = null;
     [SerializeField]
-    AudioClip _creditsClip;
+    AudioClip _creditsClip = null;
 
-    // Start is called before the first frame update
+    /// <summary>
+    /// Method called just before the first frame that the object is instantiated.
+    /// </summary>
     void Start()
     {
-        if (SceneManager.GetActiveScene().name == "Menu" || SceneManager.GetActiveScene().name == "Arcade" || SceneManager.GetActiveScene().name == "Standard")
+
+        // Ensure that the background music loads only for these scenes, and no others
+        if (SceneManager.GetActiveScene().name == "Menu" || 
+            SceneManager.GetActiveScene().name == "Arcade" || 
+            SceneManager.GetActiveScene().name == "Standard" ||
+            SceneManager.GetActiveScene().name == "Hardcore" ||
+            SceneManager.GetActiveScene().name == "Credits")
         {
             Init();
             StartNewSong();
         }
     }
 
+    /// <summary>
+    /// Object initialization.
+    /// </summary>
     private void Init()
     {
         _backgroundMusic = GetComponent<AudioSource>();
@@ -31,9 +48,10 @@ public class BackgroundMusic : MonoBehaviour
         }
     }
 
-    // Background Music
-
-    // Update is called once per frame
+    /// <summary>
+    /// Start Background Music. Allows for the background music to be different for each scene
+    /// in the future.
+    /// </summary>
     public void StartNewSong()
     {
         Init();
@@ -50,6 +68,9 @@ public class BackgroundMusic : MonoBehaviour
                     _backgroundMusic.clip = _clip;
                     break;
                 case "Arcade":
+                    _backgroundMusic.clip = _clip;
+                    break;
+                case "Hardcore":
                     _backgroundMusic.clip = _clip;
                     break;
                 case "Menu":
@@ -69,6 +90,10 @@ public class BackgroundMusic : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Used to get a random song from the list.
+    /// </summary>
+    /// <returns></returns>
     private AudioClip GetRandomSong()
     {
         return (_musics[Random.Range(0, _musics.Count)]);

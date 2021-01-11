@@ -1,17 +1,24 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
+/// <summary>
+/// 
+/// Author:         Jay Wilson
+/// Description:    Handles power ups.
+/// 
+/// Currently Deprecated.
+/// 
+/// </summary>
 public class PowerUps : MonoBehaviour
 {
     [SerializeField]
-    private PowerUp _powerUp;
-
+    private PowerUp? _powerUp = null;
     private Player _player;
-
-    // Invulnerability
     private bool _invulnerable;
 
+    /// <summary>
+    /// Handles the collosion of anything with power up items.
+    /// </summary>
+    /// <param name="other"></param>
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.tag == "Player")
@@ -34,6 +41,9 @@ public class PowerUps : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Powerup update loop.
+    /// </summary>
     private void Update()
     {
         if (_player != null && _invulnerable)
@@ -42,6 +52,9 @@ public class PowerUps : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Power up types.
+    /// </summary>
     private enum PowerUp
     {
         Invulnerability,

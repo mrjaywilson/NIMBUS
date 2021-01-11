@@ -1,25 +1,35 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
+/// <summary>
+/// 
+/// Author:         Jay Wilson
+/// Description:    Handles gems.
+/// 
+/// </summary>
 public class Mine : MonoBehaviour
 {
 
     private float _rotationSpeed;
     private Animator _animator;
     private Collider2D _collider2D;
-    private AudioSource _audioSource;
 
     [SerializeField]
-    private GameObject _explosion;
+    private MineEffects _mineEffects = null;
 
+    [SerializeField]
+    private GameObject _explosion = null;
 
-    // Start is called before the first frame update
+    /// <summary>
+    /// Method called after instantiation and before the furst update loop frame
+    /// </summary>
     void Start()
     {
         _rotationSpeed = Random.Range(10f, 25f);
 
         _animator = GetComponent<Animator>();
         _collider2D = GetComponent<Collider2D>();
-        _audioSource = GetComponent<AudioSource>();
+        _mineEffects = GameObject.FindGameObjectWithTag("MineEffects").GetComponent<MineEffects>();
 
         if (_animator == null)
         {
@@ -30,20 +40,19 @@ public class Mine : MonoBehaviour
         {
             Debug.LogError("Mine::Collider2D is null!");
         }
-
-        if (_audioSource == null)
-        {
-            Debug.LogError("Mine::AudioSource is null!");
-        }
-
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// Mine game loop.
+    /// </summary>
     void Update()
     {
         transform.Rotate(new Vector3(0f, 0f, _rotationSpeed) * Time.deltaTime);
     }
 
+    /// <summary>
+    /// Method for handling collision with Mines.
+    /// </summary>
     private void OnTriggerEnter2D(Collider2D other)
     {
 
@@ -67,6 +76,10 @@ public class Mine : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Method handles what happens when a mine explodes.
+    /// </summary>
+    /// <param name="noSound">bool: Set to true if no sound should be played during explosion.</param>
     public void Explode(bool noSound = false)
     {
         if (_collider2D != null)
@@ -74,22 +87,36 @@ public class Mine : MonoBehaviour
             _collider2D.enabled = false;
         }
 
-        if (_audioSource.clip != null)
+        // Removed Audio for Test Build Build2.45.A4.00-04.apk
+        // Checking for FPS Drops
+        if (!noSound)
         {
-            if (!noSound)
-            {
-                _audioSource.Play();
-            }
+            _mineEffects.PlayMineHitSound();
+            //_audioSource.Play();
         }
 
         _animator.SetTrigger("Explode");
         
         if (_explosion != null)
         {
-            Instantiate(_explosion, transform.position, Quaternion.identity);
+            //Instantiate(_explosion, transform.position, Quaternion.identity);
         }
 
+        StartCoroutine(DeactivateSelf());
+
+        // destroy and instead deactivate self??
         Destroy(gameObject, 1f);
+
     }
 
+    /// <summary>
+    /// Deactivate the game object.
+    /// </summary>
+    private IEnumerator DeactivateSelf()
+    {
+        yield return new WaitForSeconds(1f);
+
+        gameObject.SetActive(false);
+
+    }
 }

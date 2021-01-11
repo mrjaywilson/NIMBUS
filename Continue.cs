@@ -5,21 +5,31 @@ using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// 
+/// Author:         Jay Wilson
+/// Description:    Handles the ability to continue the game.
+/// 
+/// </summary>
 public class Continue : MonoBehaviour
 {
 
     private float _counter;
     private bool _paused;
+    private bool _counterStart = false;
 
     [SerializeField]
-    private TextMeshProUGUI _counterText;
+    private TextMeshProUGUI _counterText = null;
     [SerializeField]
-    private Button _yesButton;
+    private Button _yesButton = null;
     [SerializeField]
-    private TextMeshProUGUI _yesButtonText;
+    private TextMeshProUGUI _yesButtonText = null;
     [SerializeField]
-    private GameObject _notEnoughGems;
+    private GameObject _notEnoughGems = null;
 
+    /// <summary>
+    /// Initialization method called before the first frame after instantiation
+    /// </summary>
     void Start()
     {
         _paused = false;
@@ -37,26 +47,51 @@ public class Continue : MonoBehaviour
         _counter = 11;
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// Continue Game Loop
+    /// </summary>
     void Update()
     {
-        _counter -= Time.deltaTime;
-
-        _counterText.text = ((int)_counter).ToString();
-
-        if (_counter <= 0 && !_paused)
+        if (_counterStart)
         {
-            _paused = true;
-            EndGame();
+            _counter -= Time.deltaTime;
+
+            _counterText.text = ((int)_counter).ToString();
+
+            if (_counter <= 0 && !_paused)
+            {
+                _paused = true;
+                EndGame();
+            }
         }
     }
 
+    /// <summary>
+    /// Method for handling continuing the game.
+    /// </summary>
     public void ContinueGame()
     {
         if (PlayerPrefs.GetInt("GemsCollected", 0) > GameManager.Instance.GetContinueCost())
         {
-            Destroy(gameObject, .5f);
-            GameManager.Instance.ContinueGame();
+            //GameManager.Instance.ContinueGame();
+
+            var gems = PlayerPrefs.GetInt("GemsCollected", 0);
+
+            if (gems > GameManager.Instance.ContinueCost)
+            {
+                gems -= GameManager.Instance.ContinueCost;
+                PlayerPrefs.SetInt("GemsCollected", gems);
+                GameManager.Instance.ContinueCost += 75;
+
+                if (GameManager.Instance.IsArcade())
+                {
+                    GameManager.Instance.ArcadeRestart();
+                }
+
+                GameManager.Instance.PlayerReset();
+            }
+
+            ToggleContinue();
         }
         else
         {
@@ -64,12 +99,30 @@ public class Continue : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Method to end the game if user chooses to end it.
+    /// </summary>
     public void EndGame()
     {
-        // load game over scene, but for now, load main menu
-        SceneManager.LoadScene("Menu");
+        GameManager.Instance.ToggleGameOver();
+        ToggleContinue();
+    }
 
-        //Destroy(gameObject, .5f);
-        //GameManager.Instance.GameOver();
+    /// <summary>
+    /// Handle toggling the panel on and off.
+    /// </summary>
+    public void ToggleContinue()
+    {
+        _counter = 11;
+        _counterStart = !_counterStart;
+
+        if (_counterStart)
+        {
+            gameObject.SetActive(true);
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 }

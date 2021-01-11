@@ -2,6 +2,12 @@
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>
+/// 
+/// Author:         Jay Wilson
+/// Description:    Handles the credits scene.
+/// 
+/// </summary>
 public class Credits : MonoBehaviour
 {
     [SerializeField]
@@ -9,6 +15,9 @@ public class Credits : MonoBehaviour
 
     Button _backButton;
 
+    /// <summary>
+    /// Initial method called right before the first frame after instantiation.
+    /// </summary>
     void Start()
     {
         _backButton = GameObject.FindGameObjectWithTag("Button").GetComponent<Button>();
@@ -19,6 +28,9 @@ public class Credits : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Credits Game Loop
+    /// </summary>
     void Update()
     {
         var moveUp = new Vector3(0f, 1f, 0f) * _speed;
@@ -31,6 +43,9 @@ public class Credits : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Method to return player back to menu.
+    /// </summary>
     public void Back()
     {
         SceneManager.LoadScene("Menu");
